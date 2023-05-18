@@ -7,8 +7,7 @@ class FocalLoss(nn.Module):
     def __init__(self, gamma=2, alpha=None, mean_reduce=True):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
-        self.alpha = alpha
-        self.alpha = alpha
+        self.alpha = alpha.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         self.mean_reduce = mean_reduce
 
     def forward(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:

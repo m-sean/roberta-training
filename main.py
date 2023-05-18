@@ -57,12 +57,12 @@ def main(args: argparse.ArgumentParser) -> None:
     if args.trace:
         if not os.path.isdir(args.trace_dir):
             os.mkdir(args.trace_dir)
-        file = f"{args.data_dir}/test.csv"
-        loader = model_trainer.get_data_loader(file, train=True, shuffle=True)
+        file = f"{args.data_dir}/test.jsonl"
+        loader = model_trainer.get_data_loader(file, train=True)
         model = RobertaSentimentModel.load(args.model_dir)
         model.eval()
         model.to(device)
-        x, _, mask = next(iter(loader))
+        x, mask,_ = next(iter(loader))
         logits = model(x, mask)
         # save the model as a ScriptedModel that can be used in a rust env
         traced_model = torch.jit.trace(model, example_inputs=(x, mask))

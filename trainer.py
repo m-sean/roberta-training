@@ -35,7 +35,7 @@ def _get_loss_fn(loss: str, train: DataLoader, n_classes: int) -> torch.nn.Modul
         return LabelSmoothingCrossEntropy()
     if loss == "focal":
         alphas=_get_alphas(train, n_classes)
-        return FocalLoss(alpha=alphas, mean_reduce=True)
+        return FocalLoss(alpha=alphas, mean_reduce=False)
     return CrossEntropyLoss()
 
 def _get_alphas(train: DataLoader, n_classes: int) -> torch.Tensor:
