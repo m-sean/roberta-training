@@ -1,0 +1,16 @@
+
+LOSS=focal
+MODEL=roberta-large
+EPOCHS=10
+DROPOUT=0.0
+
+python main.py \
+    --train \
+    --eval \
+    --data-dir=/tmp \
+    --model-dir=$MODEL-$LOSS-loss-$EPOCHS-e \
+    --model-name=$MODEL \
+    --epochs=$EPOCHS \
+    --loss=$LOSS \
+    --batch-size=32 \
+    --dropout=$DROPOUT \

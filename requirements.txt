@@ -1,0 +1,3 @@
+transformers
+torch>=0.4.1
+convem @ git+ssh://git@github.com/converseon/ConvEM.git@v0.5.1
