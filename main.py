@@ -3,19 +3,23 @@ import logging
 import os
 import torch
 
-from loss import CrossEntropyLoss, FocalLoss, LabelSmoothingCrossEntropy
 from model import RobertaSentimentModel
 from optimizer import OptimizerConfig
 from trainer import RobertaModelTrainer
-    
+from data import DEFAULT_LABELS
+
+
 def main(args: argparse.ArgumentParser) -> None:
     if not any([args.train, args.eval, args.trace]):
-        raise ValueError("script requires one or more flags: `--train`, `--eval`, or `--trace`")
+        raise ValueError(
+            "script requires one or more flags: `--train`, `--eval`, or `--trace`"
+        )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_trainer = RobertaModelTrainer(
         model_name=args.model_name,
-        batch_size=args.batch_size, 
+        batch_size=args.batch_size,
+        label_to_idx=DEFAULT_LABELS,
     )
 
     if args.train:
@@ -23,7 +27,7 @@ def main(args: argparse.ArgumentParser) -> None:
         train_loader = model_trainer.get_data_loader(train_file, train=True)
         dev_file = f"{args.data_dir}/dev.jsonl"
         val_loader = model_trainer.get_data_loader(dev_file, train=False)
-        
+
         optimizer = OptimizerConfig.Adam
         optimizer.set_lr(args.lr)
         optimizer.set_betas(args.betas)
@@ -31,7 +35,9 @@ def main(args: argparse.ArgumentParser) -> None:
         optimizer.set_decay(args.decay)
         optimizer.set_amsgrad(args.amsgrad)
 
-        model_dir = args.model_dir if not args.model_dir.endswith("/") else args.model_dir[:-1]
+        model_dir = (
+            args.model_dir if not args.model_dir.endswith("/") else args.model_dir[:-1]
+        )
         model_kwargs = {"dropout": args.dropout}
         model = model_trainer.train(
             train_loader,
@@ -41,14 +47,12 @@ def main(args: argparse.ArgumentParser) -> None:
             save=model_dir,
             optimizer=optimizer,
             norm_clip=args.norm_clip,
-            **model_kwargs
+            **model_kwargs,
         )
 
     if args.eval:
-        # load evaluation data
         test_file = f"{args.data_dir}/test.jsonl"
         test_loader = model_trainer.get_data_loader(test_file, train=False)
-        # load the best model from training and evaluate
         model = RobertaSentimentModel.load(args.model_dir)
         model.eval()
         model.to(device)
@@ -62,8 +66,8 @@ def main(args: argparse.ArgumentParser) -> None:
         model = RobertaSentimentModel.load(args.model_dir)
         model.eval()
         model.to(device)
-        x, mask,_ = next(iter(loader))
-        logits = model(x, mask)
+        x, mask, _ = next(iter(loader))
+        # logits = model(x, mask)
         # save the model as a ScriptedModel that can be used in a rust env
         traced_model = torch.jit.trace(model, example_inputs=(x, mask))
         print(traced_model.code)
@@ -81,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-dir", default="roberta_sentiment")
     parser.add_argument("--trace-dir", default="roberta_trace")
     parser.add_argument("--epochs", type=int, default=4)
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--norm-clip", type=float, default=0.0)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--lr", type=float, default=1e-5)
@@ -89,10 +93,12 @@ if __name__ == "__main__":
     parser.add_argument("--decay", type=float, default=0.0)
     parser.add_argument("--eps", type=float, default=1e-8)
     parser.add_argument("--amsgrad", default=False, action="store_true")
-    parser.add_argument("--model-name", choices=['roberta-base', 'roberta-large'], default='roberta-large')
-    parser.add_argument("--loss", choices=['cce', 'focal', 'lsce'], default='lsce')
+    parser.add_argument(
+        "--model-name",
+        choices=["roberta-base", "roberta-large"],
+        default="roberta-large",
+    )
+    parser.add_argument("--loss", choices=["cce", "focal", "lsce"], default="lsce")
     logging.basicConfig(level="INFO", format="%(levelname)s: %(message)s")
     print(parser.parse_args())
     main(parser.parse_args())
-
-

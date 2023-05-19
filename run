@@ -1,16 +1,16 @@
+#!/bin/env bash
 
-LOSS=focal
 MODEL=roberta-large
-EPOCHS=10
-DROPOUT=0.0
+EPOCHS=6
+LOSS=lsce
 
 python main.py \
     --train \
     --eval \
+    --lr=1e-5 \
     --data-dir=/tmp \
-    --model-dir=$MODEL-$LOSS-loss-$EPOCHS-e \
+    --model-dir=roberta-lg-sentiment \
     --model-name=$MODEL \
     --epochs=$EPOCHS \
     --loss=$LOSS \
     --batch-size=32 \
-    --dropout=$DROPOUT \

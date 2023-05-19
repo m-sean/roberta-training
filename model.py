@@ -5,9 +5,11 @@ import torch
 import torch.nn as nn
 from transformers import RobertaModel
 
-class RobertaSentimentModel(nn.Module):
 
-    def __init__(self, model_name: str, n_classes: int, dropout: Optional[float] = 0.0) -> None:
+class RobertaSentimentModel(nn.Module):
+    def __init__(
+        self, model_name: str, n_classes: int, dropout: Optional[float] = 0.0
+    ) -> None:
         self.config = {
             "model_name": model_name,
             "n_classes": n_classes,
@@ -22,18 +24,21 @@ class RobertaSentimentModel(nn.Module):
         self.relu = nn.ReLU()
         self.classifier = nn.Linear(seq_dim, n_classes)
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, input_ids: torch.Tensor, attention_mask: torch.Tensor
+    ) -> torch.Tensor:
         x = self.roberta(input_ids, attention_mask=attention_mask, return_dict=False)[0]
+        x = self.dropout(x)
         x = self.fc(x)
         x = self.relu(x)
         x = x * torch.unsqueeze(attention_mask, 2)
         x = torch.sum(x, 1) / torch.unsqueeze(torch.sum(attention_mask, 1), 1)
         x = self.classifier(x)
         return x
-    
+
     def trainable_params(self):
         return (param for _, param in self.named_parameters())
-    
+
     def _save_config(self, dir):
         with open(f"{dir}/config.json", "w") as fp:
             json.dump(self.config, fp)
@@ -42,7 +47,7 @@ class RobertaSentimentModel(nn.Module):
     def _load_config(dir) -> Dict[str, any]:
         with open(f"{dir}/config.json", "r") as fp:
             return json.load(fp)
-            
+
     def save(self, dir: str) -> None:
         if not os.path.isdir(dir):
             os.mkdir(dir)
